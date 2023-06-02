@@ -54,7 +54,7 @@ async fn main() {
 async fn read_from_stdin(tx: Tx) {
     let mut stdin = tokio::io::stdin();
     loop {
-        let mut buf = vec![0, 255];
+        let mut buf = vec![0; 1024];
         let n = match stdin.read(&mut buf).await {
             Err(_) | Ok(0) => {
                 break;
@@ -69,7 +69,9 @@ async fn read_from_stdin(tx: Tx) {
 
 // forward message from stdin to websocket
 async fn stdin_to_ws(rx: &mut Rx, write: &mut SplitSink<WebSocketStream<MaybeTlsStream<TcpStream>>, Message>) {
+    let buffer = vec![0, 255];
     while let Some(message) = rx.recv().await {
+        println!("input: {}", message);
         write.send(message).await.unwrap();
     }
 }
