@@ -7,3 +7,7 @@ edition = "2021"
 
 [dependencies]
 tokio-tungstenite = "*"
+tokio = { version = "*", features = ["full"] }
+futures-channel = "*"
+futures = "*"
+url="*"
