@@ -1,0 +1,73 @@
+syntax = "proto3";
+
+package game;
+
+option go_package = "./proto";
+
+import "google/protobuf/timestamp.proto";
+
+service Game {
+    rpc Connecting (ConnectRequest) returns (ConnectResponse) {} // used to connect the server
+    rpc Stream (stream StreamRequest) returns (stream StreamResponse) {} // used to modify the game state
+}
+
+
+message ConnectRequest {
+    string id = 1;
+    string name = 2;
+}
+
+message ConnectResponse {
+    string token = 1;
+    repeated Player players = 2;
+}
+
+message Player {
+    string id = 1;
+    string name = 2;
+    int32 score = 3;
+    int32 card_num = 4;
+}
+
+message StreamRequest {
+    PlayCards play_cards = 1;
+}
+
+message PlayCards { // play cards
+    Player player = 1;
+    repeated Card cards = 2;
+}
+
+message Card { // 包括花色和大小
+    int32 id = 1;
+    enum Suit {
+        SPADE = 0;
+        HEART = 1;
+        DIAMOND = 2;
+        CLUB = 3;
+    }
+}
+
+message StreamResponse { // 返回游戏状态
+    oneof response {
+        Continue continue = 1; 
+        End end = 2;
+    }
+}
+
+message Continue { // Game continue
+    int32 score = 1; // 当前分数
+    repeated PlayCards players = 2; // 玩家列表，以及它上一次出的牌
+    repeated Card cards = 3; // 当前桌面上的牌，当前出牌玩家必须出比这些牌大的牌
+    int32 current_player = 4; // 当前出牌玩家
+    // repeated Card cards = 5; // 对应玩家的手牌
+}
+
+message Fail { // Play cards fail
+    string reason = 1;
+}
+
+message End { // Game end
+    
+}
+
