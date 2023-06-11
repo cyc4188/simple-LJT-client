@@ -39,28 +39,24 @@ message PlayCards { // play cards
 }
 
 message Card { // 包括花色和大小
-    int32 id = 1;
-    enum Suit {
-        SPADE = 0;
-        HEART = 1;
-        DIAMOND = 2;
-        CLUB = 3;
-    }
+    int32 rank = 1;
+    int32 suit = 2;
 }
 
 message StreamResponse { // 返回游戏状态
     oneof response {
         Continue continue = 1; 
         End end = 2;
+        Fail fail = 3;
     }
 }
 
 message Continue { // Game continue
     int32 score = 1; // 当前分数
-    repeated PlayCards players = 2; // 玩家列表，以及它上一次出的牌
-    repeated Card cards = 3; // 当前桌面上的牌，当前出牌玩家必须出比这些牌大的牌
-    int32 current_player = 4; // 当前出牌玩家
-    // repeated Card cards = 5; // 对应玩家的手牌
+    repeated Player players = 2; // 玩家列表，以及它上一次出的牌
+    repeated Card current_cards = 3; // 当前桌面上的牌，当前出牌玩家必须出比这些牌大的牌
+    Player current_player = 4; // 当前出牌玩家
+    repeated Card cards = 5; // 对应玩家的手牌
 }
 
 message Fail { // Play cards fail
@@ -70,4 +66,3 @@ message Fail { // Play cards fail
 message End { // Game end
     
 }
-
