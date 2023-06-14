@@ -27,15 +27,22 @@ message Player {
     string name = 2;
     int32 score = 3;
     int32 card_num = 4;
+    uint32 index = 5;
 }
 
 message StreamRequest {
-    PlayCards play_cards = 1;
+    oneof request {
+        PlayCards play_cards = 1;
+        Pass pass = 2;
+    }
 }
 
 message PlayCards { // play cards
     Player player = 1;
     repeated Card cards = 2;
+}
+message Pass { // pass
+    Player player = 1;
 }
 
 message Card { // 包括花色和大小
