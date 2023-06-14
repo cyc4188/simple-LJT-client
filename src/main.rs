@@ -1,5 +1,3 @@
-use std::error::Error;
-
 use simple_ljt_client::game::{
     self, game_client::GameClient, stream_request, stream_response, ConnectRequest, StreamRequest,
 };

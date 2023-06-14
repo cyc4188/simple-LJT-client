@@ -1,8 +1,21 @@
 use crate::game;
 
+// #[derive(PartialOrd, Eq, PartialEq)]
 pub struct Card {
-    pub suit: i32,  // 花色
-    pub rank: i32,  // 
+    pub suit: i32, // 花色
+    pub rank: i32, //
+}
+
+impl Card {
+    pub fn sort_cards(cards: &mut [Card]) {
+        cards.sort_by(|a, b| {
+            if a.rank == b.rank {
+                a.suit.cmp(&b.suit)
+            } else {
+                a.rank.cmp(&b.rank)
+            }
+        });
+    }
 }
 
 impl From<&game::Card> for Card {
@@ -15,18 +28,14 @@ impl From<&game::Card> for Card {
 }
 impl ToString for Card {
     fn to_string(&self) -> String {
-        card_to_string(self)
+        format!("{}{}", suit_to_string(self.suit), rank_to_string(self.rank))
     }
-}
-
-pub fn card_to_string(card: &Card) -> String {
-    format!("{}{}", suit_to_string(card.suit), rank_to_string(card.rank))
 }
 
 // map rank to string
 pub fn rank_to_string(rank: i32) -> String {
     match rank {
-        1..= 8  => (rank + 2).to_string(),
+        1..=8 => (rank + 2).to_string(),
         9 => "J".to_string(),
         10 => "Q".to_string(),
         11 => "K".to_string(),
@@ -34,7 +43,7 @@ pub fn rank_to_string(rank: i32) -> String {
         13 => "2".to_string(),
         14 => "Jocker0".to_string(),
         15 => "Jocker1".to_string(),
-        _ => unreachable!()
+        _ => unreachable!(),
     }
 }
 
