@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use crate::proto;
 // #[derive(PartialOrd, Eq, PartialEq)]
 pub struct Card {
@@ -25,9 +27,47 @@ impl From<&proto::Card> for Card {
         }
     }
 }
+impl Into<proto::Card> for Card {
+    fn into(self) -> proto::Card {
+        proto::Card {
+            suit: self.suit,
+            rank: self.rank,
+        }
+    }
+}
+impl From<&str> for Card {
+    fn from(s: &str) -> Self {
+        Card::from_str(s).unwrap()
+    }
+}
 impl ToString for Card {
     fn to_string(&self) -> String {
         format!("{}{}", suit_to_string(self.suit), rank_to_string(self.rank))
+    }
+}
+impl FromStr for Card {
+    type Err = ();
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let mut chars = s.chars();
+        let suit = match chars.next() {
+            Some('0') => 0,
+            Some('1') => 1,
+            Some('2') => 2,
+            Some('3') => 3,
+            _ => return Err(()),
+        };
+        let rank = match chars.next() {
+            Some('J') => 9,
+            Some('Q') => 10,
+            Some('K') => 11,
+            Some('A') => 12,
+            Some('2') => 13,
+            Some('0') => 14,
+            Some('1') => 15,
+            Some(c) => c.to_digit(10).unwrap() as i32 - 2,
+            _ => return Err(()),
+        };
+        Ok(Card { suit, rank })
     }
 }
 
@@ -54,4 +94,12 @@ pub fn suit_to_string(suit: i32) -> String {
         3 => "♦".to_string(),
         _ => "".to_string(),
     }
+}
+
+pub fn show_cards(cards: &[Card]) -> String {
+    cards
+        .iter()
+        .map(|card| card.to_string())
+        .collect::<Vec<String>>()
+        .join(" ")
 }

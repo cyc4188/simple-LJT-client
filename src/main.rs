@@ -1,7 +1,8 @@
+use simple_ljt_client::card::{show_cards, Card};
+
 use simple_ljt_client::proto::{
-    self, game_client::GameClient, stream_request, stream_response, ConnectRequest, StreamRequest,
+    self, game_client::GameClient, stream_request, ConnectRequest, StreamRequest,
 };
-use simple_ljt_client::Card;
 use tokio::io::AsyncBufReadExt;
 use tokio::sync::mpsc::{Receiver, Sender};
 use tonic::transport::Channel;
@@ -22,8 +23,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // stream
     let (mut tx, rx) = tokio::sync::mpsc::channel::<StreamRequest>(16);
-    // run_stream(&mut client, id, rx).await?;
-    tokio::task::spawn(run_stream(client, id, rx));
+    run_stream(&mut client, id, rx).await;
+
+    // let handle = tokio::task::spawn(run_stream(&mut client, id, rx));
 
     // sender
     keyboard(tx.clone()).await;
@@ -31,21 +33,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     return Ok(());
 }
 
-// read from keyboard
-// send request to tx
-async fn keyboard(tx: Sender<StreamRequest>) {
-    let stdin = tokio::io::stdin();
-    let mut lines = tokio::io::BufReader::new(stdin).lines();
+async fn keyboard(tx: Sender<StreamRequest>) {}
 
-    while let Some(line) = lines.next_line().await.unwrap() {
-        println!("you entered {}", line);
-    }
-}
-
-// recieve request from rx Receiver
-// send request to game_stream
-// get response from game_stream
-async fn run_stream(mut client: GameClient<Channel>, id: String, mut rx: Receiver<StreamRequest>) {
+async fn run_stream(client: &mut GameClient<Channel>, id: String, mut rx: Receiver<StreamRequest>) {
     let outbound = async_stream::stream! {
         for i in 0..1 {
             let request = StreamRequest {
@@ -65,7 +55,6 @@ async fn run_stream(mut client: GameClient<Channel>, id: String, mut rx: Receive
                             )
                         )
             };
-            yield request;
         }
 
         while let Some(request) = rx.recv().await {
@@ -73,28 +62,9 @@ async fn run_stream(mut client: GameClient<Channel>, id: String, mut rx: Receive
         }
     };
 
-    // get response from game_stream
     let response = client.stream(outbound).await.unwrap();
     let mut inbound = response.into_inner();
     while let Some(resp) = inbound.message().await.unwrap() {
-        match resp.response {
-            Some(stream_response::Response::Continue(cont)) => {
-                println!(
-                    "continue = {}",
-                    cont.cards
-                        .iter()
-                        .map(|card| Card::from(card).to_string())
-                        .collect::<Vec<String>>()
-                        .join(" ")
-                );
-            }
-            Some(stream_response::Response::Fail(fail)) => {
-                println!("fail = {:?}", fail);
-            }
-            Some(stream_response::Response::End(end)) => {
-                println!("end = {:?}", end);
-            }
-            _ => {}
-        }
+        println!("resp = {:?}", resp);
     }
 }

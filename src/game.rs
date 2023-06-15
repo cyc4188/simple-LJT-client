@@ -1,12 +1,15 @@
-use crate::{Client, Player};
+use crate::player::{Client, Player};
+use crate::proto::StreamRequest;
 
 pub struct Game {
-    pub client: Client,
     pub players: Vec<Player>,
 }
 
 impl Game {
-    pub fn game_loop(&mut self) {
+    /// this function is used to bridge the client and server
+    /// it will receive the message from client and send it to server
+    /// and then receive the message from server and send it to client
+    pub fn bridge(&mut self) {
         // TODO
     }
 }

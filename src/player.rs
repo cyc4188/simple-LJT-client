@@ -1,5 +1,9 @@
+use tokio::sync::mpsc::Sender;
+
+use crate::card::show_cards;
 use crate::card::Card;
-use crate::proto;
+use crate::proto::{self, stream_request, StreamRequest};
+use tokio::io::AsyncBufReadExt;
 
 pub struct Client {
     pub id: String,       // 玩家id
@@ -18,6 +22,32 @@ impl Client {
             .map(|card| card.to_string())
             .collect::<Vec<String>>()
             .join(" ")
+    }
+
+    pub async fn listen_to_keyboard(&mut self, tx: Sender<StreamRequest>) {
+        let stdin = tokio::io::stdin();
+        let mut lines = tokio::io::BufReader::new(stdin).lines();
+        while let Some(line) = lines.next_line().await.unwrap() {
+            println!("you entered {}", line);
+            let cards: Vec<_> = line.split_ascii_whitespace().map(Card::from).collect();
+
+            println!("{}", show_cards(&cards));
+
+            let request = StreamRequest {
+                request: Some(stream_request::Request::PlayCards(proto::PlayCards {
+                    player: Some(proto::Player {
+                        id: self.id.clone(),
+                        name: "test".into(),
+                        score: 0,
+                        card_num: 0,
+                        index: 0,
+                    }),
+                    cards: cards.into_iter().map(|card| Card::into(card)).collect(),
+                })),
+            };
+            // TODO: check if the cards are valid
+            tx.send(request).await.unwrap();
+        }
     }
 }
 
