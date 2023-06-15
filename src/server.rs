@@ -2,7 +2,10 @@ use crate::proto;
 use tokio::sync::mpsc::{Receiver, Sender};
 use tonic::transport::Channel;
 
-use crate::proto::{game_client::GameClient, stream_request, StreamRequest, StreamResponse};
+use crate::proto::{
+    game_client::GameClient, stream_request, ConnectRequest, StreamRequest, StreamResponse,
+};
+use tonic::Request;
 
 pub struct Server {
     pub response_sender: Sender<StreamResponse>,
@@ -12,9 +15,22 @@ pub struct Server {
 
 impl Server {
     pub async fn new(response_sender: Sender<StreamResponse>, id: String, dest: String) -> Self {
-        let game_client = GameClient::connect(dest)
+        let mut game_client = GameClient::connect(dest)
             .await
             .expect("cannot connect to the server");
+
+        // 首先发送一个 ConnectRequest
+
+        let connect_request = Request::new(ConnectRequest {
+            id: id.clone(),
+            name: "test".into(),
+        });
+        let response = game_client
+            .connecting(connect_request)
+            .await
+            .expect("cannot connect to the server");
+        println!("RESPONSE={:?}", response);
+
         Self {
             response_sender,
             id,
@@ -22,7 +38,7 @@ impl Server {
         }
     }
 
-    pub async fn start_server(&mut self, mut rx: Receiver<StreamRequest>) {
+    pub async fn start_server(mut self, mut rx: Receiver<StreamRequest>) {
         let id = self.id.clone();
         let outbound = async_stream::stream! {
             for i in 0..1 {

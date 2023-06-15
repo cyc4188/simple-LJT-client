@@ -1,31 +1,26 @@
 use simple_ljt_client::proto::{
-    self, game_client::GameClient, stream_request, ConnectRequest, StreamRequest,
+    self, game_client::GameClient, stream_request, ConnectRequest, StreamRequest, StreamResponse,
 };
+use simple_ljt_client::server::Server;
 use tokio::sync::mpsc::{Receiver, Sender};
+use tokio_tungstenite::tungstenite::http::request;
 use tonic::transport::Channel;
 use tonic::Request;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let (reponse_sender, response_receiver) = tokio::sync::mpsc::channel::<StreamResponse>(64);
+
+    let (request_sender, request_receiver) = tokio::sync::mpsc::channel::<StreamRequest>(64);
+
     let id = uuid::Uuid::new_v4().to_string();
-    let dest = "http://[::1]:8080";
-    let mut client = GameClient::connect(dest).await?;
+    let dest = "http://[::1]:8080".to_string();
 
-    let connect_request = Request::new(ConnectRequest {
-        id: id.clone(),
-        name: "test".into(),
-    });
-    let response = client.connecting(connect_request).await?;
-    println!("RESPONSE={:?}", response);
+    let server = Server::new(reponse_sender.clone(), id.clone(), dest.clone()).await;
 
-    // stream
-    let (mut tx, rx) = tokio::sync::mpsc::channel::<StreamRequest>(16);
-    run_stream(&mut client, id, rx).await;
+    tokio::task::spawn(server.start_server(request_receiver));
 
     // let handle = tokio::task::spawn(run_stream(&mut client, id, rx));
-
-    // sender
-    keyboard(tx.clone()).await;
 
     return Ok(());
 }
