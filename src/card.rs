@@ -1,5 +1,4 @@
-use crate::game;
-
+use crate::proto;
 // #[derive(PartialOrd, Eq, PartialEq)]
 pub struct Card {
     pub suit: i32, // 花色
@@ -18,8 +17,8 @@ impl Card {
     }
 }
 
-impl From<&game::Card> for Card {
-    fn from(card: &game::Card) -> Self {
+impl From<&proto::Card> for Card {
+    fn from(card: &proto::Card) -> Self {
         Card {
             suit: card.suit,
             rank: card.rank,

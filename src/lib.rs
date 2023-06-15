@@ -4,4 +4,4 @@ pub mod proto;
 
 pub use card::*;
 pub use player::*;
-pub use proto::*;
+// pub use proto::*;

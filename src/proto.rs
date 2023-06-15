@@ -1,3 +1,3 @@
-pub mod game {
-    tonic::include_proto!("game");
-}
+// pub mod game {
+tonic::include_proto!("game");
+// }

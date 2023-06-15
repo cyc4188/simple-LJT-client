@@ -1,4 +1,4 @@
-use simple_ljt_client::game::{
+use simple_ljt_client::proto::{
     self, game_client::GameClient, stream_request, stream_response, ConnectRequest, StreamRequest,
 };
 use simple_ljt_client::Card;
@@ -31,6 +31,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     return Ok(());
 }
 
+// read from keyboard
+// send request to tx
 async fn keyboard(tx: Sender<StreamRequest>) {
     let stdin = tokio::io::stdin();
     let mut lines = tokio::io::BufReader::new(stdin).lines();
@@ -40,6 +42,9 @@ async fn keyboard(tx: Sender<StreamRequest>) {
     }
 }
 
+// recieve request from rx Receiver
+// send request to game_stream
+// get response from game_stream
 async fn run_stream(mut client: GameClient<Channel>, id: String, mut rx: Receiver<StreamRequest>) {
     let outbound = async_stream::stream! {
         for i in 0..1 {
@@ -47,15 +52,15 @@ async fn run_stream(mut client: GameClient<Channel>, id: String, mut rx: Receive
                 request:
                     Some(
                         stream_request::Request::PlayCards(
-                            game::PlayCards {
-                                player: Some(game::Player {
+                            proto::PlayCards {
+                                player: Some(proto::Player {
                                     id: id.clone(),
                                     name: "test".into(),
                                     score: 0,
                                     card_num: 0,
                                     index: 0,
                                 }),
-                                cards: vec![game::Card{ suit: 1, rank: 1 } ],
+                                cards: vec![proto::Card{ suit: 1, rank: 1 } ],
                             }
                             )
                         )
