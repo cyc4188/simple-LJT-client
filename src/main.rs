@@ -1,9 +1,6 @@
-use simple_ljt_client::card::{show_cards, Card};
-
 use simple_ljt_client::proto::{
     self, game_client::GameClient, stream_request, ConnectRequest, StreamRequest,
 };
-use tokio::io::AsyncBufReadExt;
 use tokio::sync::mpsc::{Receiver, Sender};
 use tonic::transport::Channel;
 use tonic::Request;
