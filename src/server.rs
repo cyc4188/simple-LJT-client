@@ -20,7 +20,6 @@ impl Server {
             .expect("cannot connect to the server");
 
         // 首先发送一个 ConnectRequest
-
         let connect_request = Request::new(ConnectRequest {
             id: id.clone(),
             name: "test".into(),

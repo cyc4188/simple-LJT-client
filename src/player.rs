@@ -12,6 +12,18 @@ pub struct Client {
 }
 
 impl Client {
+    pub fn new(id: String) -> Self {
+        Self {
+            id,
+            cards: vec![],
+            player: Player {
+                name: "test".into(),
+                score: 0,
+                card_num: 0,
+                index: 0,
+            },
+        }
+    }
     pub fn modify_cards(&mut self, cards: Vec<Card>) {
         Card::sort_cards(&mut self.cards); // sort first
         self.cards = cards;
@@ -42,7 +54,7 @@ impl Client {
                         card_num: 0,
                         index: 0,
                     }),
-                    cards: cards.into_iter().map(|card| Card::into(card)).collect(),
+                    cards: cards.into_iter().map(Card::into).collect(),
                 })),
             };
             // TODO: check if the cards are valid
