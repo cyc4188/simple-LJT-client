@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::{cell::RefCell, rc::Rc};
 
 use tui::{backend::CrosstermBackend, Terminal};
 
@@ -11,13 +11,13 @@ pub const TICK_RATE: u64 = 250;
 
 pub type TerminalType = Terminal<CrosstermBackend<io::Stdout>>;
 pub struct GameUI {
-    client: Rc<Client>,
-    players: Rc<Vec<Player>>,
+    client: Rc<RefCell<Client>>,
+    players: Rc<RefCell<Vec<Player>>>,
     terminal: TerminalType,
 }
 
 impl GameUI {
-    pub fn new(client: Rc<Client>, players: Rc<Vec<Player>>) -> Self {
+    pub fn new(client: Rc<RefCell<Client>>, players: Rc<RefCell<Vec<Player>>>) -> Self {
         let stdout = io::stdout;
         let backend = CrosstermBackend::new(stdout());
         let terminal = Terminal::new(backend).unwrap();
