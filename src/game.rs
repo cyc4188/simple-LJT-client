@@ -55,14 +55,16 @@ impl Game {
                     }
                 }
             }
-            // check reponse receiver
-
             // handle event
+
+            // check reponse receiver
+            self.check_response();
         }
     }
 
     fn check_response(&mut self) {
-        if let Ok(response) = self.response_receiver.try_recv() {
+        // recive reponse until empty
+        while let Ok(response) = self.response_receiver.try_recv() {
             // modify the game state
             match response.response.expect("response is empty") {
                 stream_response::Response::Continue(cont) => {
