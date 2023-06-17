@@ -62,6 +62,27 @@ impl Game {
         }
     }
 
+    async fn play_cards(&mut self, cards: Vec<Card>) {
+        let request = StreamRequest {
+            request: Some(proto::stream_request::Request::PlayCards(
+                proto::PlayCards {
+                    cards: cards.into_iter().map(|c| c.into()).collect(),
+                    player: Some(proto::Player::from(&self.client.borrow().player)),
+                },
+            )),
+        };
+        self.request_sender.send(request).await.unwrap();
+    }
+
+    async fn pass(&mut self) {
+        let request = StreamRequest {
+            request: Some(proto::stream_request::Request::Pass(proto::Pass {
+                player: Some(proto::Player::from(&self.client.borrow().player)),
+            })),
+        };
+        self.request_sender.send(request).await.unwrap();
+    }
+
     fn check_response(&mut self) {
         // recive reponse until empty
         while let Ok(response) = self.response_receiver.try_recv() {

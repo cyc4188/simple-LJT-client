@@ -14,13 +14,14 @@ pub struct Client {
 impl Client {
     pub fn new(id: String) -> Self {
         Self {
-            id,
+            id: id.clone(),
             cards: vec![],
             player: Player {
                 name: "test".into(),
                 score: 0,
                 card_num: 0,
                 index: 0,
+                id,
             },
         }
     }
@@ -69,6 +70,7 @@ pub struct Player {
     pub score: i32,
     pub card_num: i32,
     pub index: u32,
+    pub id: String,
 }
 
 impl Player {}
@@ -80,6 +82,19 @@ impl From<&proto::Player> for Player {
             score: player.score,
             card_num: player.card_num,
             index: player.index,
+            id: "".into(),
+        }
+    }
+}
+
+impl From<&Player> for proto::Player {
+    fn from(player: &Player) -> Self {
+        proto::Player {
+            name: player.name.clone(),
+            score: player.score,
+            card_num: player.card_num,
+            index: player.index,
+            id: player.id.clone(),
         }
     }
 }
