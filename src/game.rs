@@ -1,10 +1,13 @@
 use std::cell::RefCell;
+use std::error::Error;
 use std::rc::Rc;
 use std::time::Duration;
 
 use crate::card::Card;
 use crate::player::{Client, Player};
-use crate::proto::{self, stream_response, Continue, End, Fail, StreamRequest, StreamResponse};
+use crate::proto::{
+    self, stream_response, Continue, End, Fail, PlayCards, StreamRequest, StreamResponse,
+};
 use crate::ui::{self, GameUI};
 use crossterm;
 use crossterm::event::{poll, Event};
@@ -55,7 +58,8 @@ impl Game {
         }
     }
 
-    pub fn game_loop(&mut self) {
+    pub async fn game_loop(&mut self) {
+        self.init().await.unwrap();
         let mut ui = GameUI::new(
             self.client.clone(),
             self.players.clone(),
@@ -63,7 +67,7 @@ impl Game {
         );
         loop {
             // render the game ui
-            ui.main_screen();
+            // ui.main_screen();
 
             // listen for event
             if poll(Duration::from_millis(ui::TICK_RATE)).unwrap() {
@@ -121,6 +125,7 @@ impl Game {
                     // change client cards
                     let mut client = self.client.borrow_mut();
                     client.modify_cards(cont.cards.iter().map(Card::from).collect());
+                    println!("{:?}", client.cards);
                 }
                 stream_response::Response::Fail(fail) => {
                     // TODO: pop fail message
@@ -131,5 +136,19 @@ impl Game {
                 }
             }
         }
+    }
+    // send init stream
+    pub async fn init(&mut self) -> Result<(), Box<dyn Error>> {
+        let player = proto::Player::from(&self.client.borrow().player);
+        self.request_sender
+            .send(StreamRequest {
+                request: Some(proto::stream_request::Request::PlayCards(PlayCards {
+                    cards: vec![],
+                    player: Some(player),
+                })),
+            })
+            .await
+            .expect("stream connect failed");
+        Ok(())
     }
 }

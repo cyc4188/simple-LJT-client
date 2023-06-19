@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use crate::proto;
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Card {
     pub suit: i32, // 花色
     pub rank: i32, //

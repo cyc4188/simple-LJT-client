@@ -21,7 +21,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // start game loop
     let mut game = Game::new(id.clone(), request_sender, response_receiver);
-    game.game_loop();
+    game.game_loop().await;
 
     handle.await.unwrap();
 
