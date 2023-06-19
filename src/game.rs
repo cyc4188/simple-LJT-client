@@ -10,12 +10,30 @@ use crossterm;
 use crossterm::event::{poll, Event};
 use tokio::sync::mpsc::{Receiver, Sender};
 
+#[derive(Debug)]
+pub struct GameState {
+    pub score: i32,
+    pub current_cards: Vec<Card>,
+    pub current_index: u32,
+}
+
+impl GameState {
+    pub fn new() -> Self {
+        Self {
+            score: 0,
+            current_cards: vec![],
+            current_index: 0,
+        }
+    }
+}
+
 pub struct Game {
     pub client: Rc<RefCell<Client>>,
     pub players: Rc<RefCell<Vec<Player>>>,
     pub request_sender: Sender<StreamRequest>,
     pub response_receiver: Receiver<StreamResponse>,
-    pub current_cards: Vec<Card>,
+    pub game_state: Rc<RefCell<GameState>>,
+    // pub current_cards: Vec<Card>,
 }
 
 impl Game {
@@ -26,19 +44,23 @@ impl Game {
     ) -> Self {
         let client = Rc::new(RefCell::new(Client::new(id)));
         let players = Rc::new(RefCell::new(vec![]));
-        let current_cards = vec![];
+        let game_state = Rc::new(RefCell::new(GameState::new()));
 
         Self {
             client,
             players,
             request_sender,
             response_receiver,
-            current_cards,
+            game_state,
         }
     }
 
     pub fn game_loop(&mut self) {
-        let mut ui = GameUI::new(self.client.clone(), self.players.clone());
+        let mut ui = GameUI::new(
+            self.client.clone(),
+            self.players.clone(),
+            self.game_state.clone(),
+        );
         loop {
             // render the game ui
             ui.main_screen();
@@ -62,6 +84,7 @@ impl Game {
         }
     }
 
+    // TODO: add error handler
     async fn play_cards(&mut self, cards: Vec<Card>) {
         let request = StreamRequest {
             request: Some(proto::stream_request::Request::PlayCards(
@@ -90,7 +113,12 @@ impl Game {
             match response.response.expect("response is empty") {
                 stream_response::Response::Continue(cont) => {
                     // change game state
-                    self.current_cards = cont.current_cards.iter().map(Card::from).collect();
+                    let mut game_state = self.game_state.borrow_mut();
+                    game_state.current_cards = cont.current_cards.iter().map(Card::from).collect();
+                    game_state.current_index = cont.current_player.unwrap().index;
+                    game_state.score = cont.score;
+
+                    // change client cards
                     let mut client = self.client.borrow_mut();
                     client.modify_cards(cont.cards.iter().map(Card::from).collect());
                 }

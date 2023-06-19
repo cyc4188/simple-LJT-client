@@ -9,7 +9,10 @@ use tui::{
     Frame, Terminal,
 };
 
-use crate::player::{Client, Player};
+use crate::{
+    game::GameState,
+    player::{Client, Player},
+};
 use std::io;
 
 pub enum UIstate {}
@@ -18,13 +21,18 @@ pub const TICK_RATE: u64 = 250;
 
 pub type TerminalType = Terminal<CrosstermBackend<io::Stdout>>;
 pub struct GameUI {
-    client: Rc<RefCell<Client>>,
-    players: Rc<RefCell<Vec<Player>>>,
-    terminal: TerminalType,
+    client: Rc<RefCell<Client>>,        // 显示手牌
+    players: Rc<RefCell<Vec<Player>>>,  // 显示其他玩家
+    terminal: TerminalType,             // 绘制 ui
+    game_state: Rc<RefCell<GameState>>, // 还需要一个用于绘制场上分数、当前出牌、当前出牌玩家的 ui
 }
 
 impl GameUI {
-    pub fn new(client: Rc<RefCell<Client>>, players: Rc<RefCell<Vec<Player>>>) -> Self {
+    pub fn new(
+        client: Rc<RefCell<Client>>,
+        players: Rc<RefCell<Vec<Player>>>,
+        game_state: Rc<RefCell<GameState>>,
+    ) -> Self {
         let stdout = io::stdout;
         let backend = CrosstermBackend::new(stdout());
         let mut terminal = Terminal::new(backend).unwrap();
@@ -34,6 +42,7 @@ impl GameUI {
             client,
             terminal,
             players,
+            game_state,
         }
     }
 
