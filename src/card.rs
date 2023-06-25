@@ -80,8 +80,8 @@ pub fn rank_to_string(rank: i32) -> String {
         11 => "K".to_string(),
         12 => "A".to_string(),
         13 => "2".to_string(),
-        14 => "Jocker0".to_string(),
-        15 => "Jocker1".to_string(),
+        14 => "🃏0".to_string(),
+        15 => "🃏1".to_string(),
         _ => unreachable!(),
     }
 }

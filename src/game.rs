@@ -59,7 +59,7 @@ impl Game {
     }
 
     pub async fn game_loop(&mut self) {
-        self.init().await.unwrap();
+        // self.init().await.unwrap();
         let mut ui = GameUI::new(
             self.client.clone(),
             self.players.clone(),
@@ -67,7 +67,7 @@ impl Game {
         );
         loop {
             // render the game ui
-            // ui.main_screen();
+            ui.main_screen();
 
             // listen for event
             if poll(Duration::from_millis(ui::TICK_RATE)).unwrap() {
@@ -125,7 +125,6 @@ impl Game {
                     // change client cards
                     let mut client = self.client.borrow_mut();
                     client.modify_cards(cont.cards.iter().map(Card::from).collect());
-                    println!("{:?}", client.cards);
                 }
                 stream_response::Response::Fail(fail) => {
                     // TODO: pop fail message

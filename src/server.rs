@@ -58,6 +58,7 @@ impl Server {
                                 )
                             )
                 };
+                yield request;
             }
 
             while let Some(request) = rx.recv().await {
@@ -68,7 +69,11 @@ impl Server {
         let response = self.game_client.stream(outbound).await.unwrap();
         let mut inbound = response.into_inner();
         while let Some(resp) = inbound.message().await.unwrap() {
-            println!("resp = {:?}", resp);
+            // println!("resp = {:?}", resp);
+            self.response_sender
+                .send(resp)
+                .await
+                .expect("cannot send response to game");
         }
     }
 }

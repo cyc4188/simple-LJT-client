@@ -26,8 +26,8 @@ impl Client {
         }
     }
     pub fn modify_cards(&mut self, cards: Vec<Card>) {
-        Card::sort_cards(&mut self.cards); // sort first
         self.cards = cards;
+        Card::sort_cards(&mut self.cards); // sort
     }
     pub fn show_cards(&self) -> String {
         self.cards

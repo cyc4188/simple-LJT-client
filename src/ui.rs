@@ -1,8 +1,8 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, collections::HashSet, rc::Rc};
 
 use tui::{
     backend::CrosstermBackend,
-    layout::{Constraint, Layout, Rect},
+    layout::{Alignment, Constraint, Layout, Rect},
     style::{Color, Style},
     text::{Span, Spans},
     widgets::{Block, Borders, Paragraph, Tabs},
@@ -22,10 +22,12 @@ pub const TICK_RATE: u64 = 250;
 
 pub type TerminalType = Terminal<CrosstermBackend<io::Stdout>>;
 pub struct GameUI {
-    client: Rc<RefCell<Client>>,        // 显示手牌
-    players: Rc<RefCell<Vec<Player>>>,  // 显示其他玩家
-    terminal: TerminalType,             // 绘制 ui
-    game_state: Rc<RefCell<GameState>>, // 还需要一个用于绘制场上分数、当前出牌、当前出牌玩家的 ui
+    client: Rc<RefCell<Client>>,         // 显示手牌
+    select_index: HashSet<usize>,        // 已选择要出的牌
+    current_index: usize,                // 选择的位置
+    players: Rc<RefCell<Vec<Player>>>,   // 显示其他玩家
+    terminal: Rc<RefCell<TerminalType>>, // 绘制 ui
+    game_state: Rc<RefCell<GameState>>,  // 还需要一个用于绘制场上分数、当前出牌、当前出牌玩家的 ui
 }
 
 impl GameUI {
@@ -41,17 +43,20 @@ impl GameUI {
         terminal.clear().unwrap();
         Self {
             client,
-            terminal,
+            terminal: Rc::new(RefCell::new(terminal)),
             players,
             game_state,
+            select_index: HashSet::new(),
+            current_index: 0,
         }
     }
 
     pub fn main_screen(&mut self) {
         const MENU: [&str; 2] = ["Game", "Chat"];
 
-        let client = self.client.clone();
-        self.terminal
+        let terminal = self.terminal.clone();
+        terminal
+            .borrow_mut()
             .draw(|rect| {
                 let chunks = Layout::default()
                     .direction(tui::layout::Direction::Vertical)
@@ -59,13 +64,14 @@ impl GameUI {
                     .constraints([Constraint::Length(3), Constraint::Min(20)].as_ref())
                     .split(rect.size());
 
-                GameUI::draw_menu(rect, chunks[0], &MENU, 0);
-                GameUI::draw_main(rect, chunks[1], client);
+                self.draw_menu(rect, chunks[0], &MENU, 0);
+                self.draw_main(rect, chunks[1]);
             })
             .unwrap();
     }
 
     fn draw_menu(
+        &self,
         f: &mut Frame<CrosstermBackend<io::Stdout>>,
         location: Rect,
         menu: &[&str],
@@ -90,40 +96,67 @@ impl GameUI {
             .divider(Span::raw("|"));
         f.render_widget(tabs, location);
     }
-    fn draw_main(
-        f: &mut Frame<CrosstermBackend<io::Stdout>>,
-        location: Rect,
-        client: Rc<RefCell<Client>>,
-    ) {
+    fn draw_main(&self, f: &mut Frame<CrosstermBackend<io::Stdout>>, location: Rect) {
         let chunks = Layout::default()
             .direction(tui::layout::Direction::Horizontal)
             .margin(2)
-            .constraints([Constraint::Length(60), Constraint::Min(40)].as_ref())
+            .constraints([Constraint::Min(100), Constraint::Min(40)].as_ref())
             .split(location);
 
-        let block = Block::default().title("Game").borders(Borders::ALL);
-        f.render_widget(block, chunks[0]);
-
-        // show cards in chunks[0]
-        let cards = client.borrow().cards.clone();
-        let subchunks = Layout::default()
-            .direction(tui::layout::Direction::Vertical)
-            .margin(2)
-            .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
-            .split(chunks[0]);
-        for (i, card) in cards.iter().enumerate() {
-            let card_widget = GameUI::card_widget(card.clone());
-            f.render_widget(card_widget, subchunks[i]);
-        }
-
-        let block = Block::default().title("Chat").borders(Borders::ALL);
-        f.render_widget(block, chunks[1]);
+        // Game Part
+        self.draw_game(f, chunks[0]);
+        // Chat Part
+        self.draw_chat(f, chunks[1]);
     }
 
-    fn card_widget(card: Card) -> Paragraph<'static> {
-        let card_str = format!("{}^{}", card.suit, card.rank);
-        let card_span = Span::styled(card_str, Style::default().fg(Color::Green));
-        let card_spans = Spans::from(vec![card_span]);
-        Paragraph::new(card_spans)
+    fn draw_game(&self, f: &mut Frame<CrosstermBackend<io::Stdout>>, location: Rect) {
+        // split with 2 parts
+        let chunks = Layout::default()
+            .direction(tui::layout::Direction::Vertical)
+            .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
+            .split(location);
+
+        // chunks[0] is for other players
+        // TODO
+        // chunks[1] is for cards
+        self.draw_cards(f, chunks[1]);
+    }
+
+    fn draw_chat(&self, f: &mut Frame<CrosstermBackend<io::Stdout>>, location: Rect) {
+        let block = Block::default().title("Chat").borders(Borders::ALL);
+        f.render_widget(block, location);
+        // TODO: add logic
+    }
+
+    fn draw_cards(&self, f: &mut Frame<CrosstermBackend<io::Stdout>>, location: Rect) {
+        let cards = &self.client.borrow().cards;
+        let card_widget = self.card_widget(cards);
+        let cards = Paragraph::new(card_widget)
+            .block(Block::default().title("Cards").borders(Borders::ALL))
+            .alignment(Alignment::Center);
+        f.render_widget(cards, location);
+    }
+
+    fn card_widget(&self, cards: &[Card]) -> Spans<'static> {
+        let mut spans = vec![];
+        for (index, card) in cards.iter().enumerate() {
+            let card_str = format!("{}", card.to_string());
+            let mut card_style = Style::default().fg(Color::White);
+
+            // selected
+            if self.select_index.contains(&index) {
+                card_style = card_style.fg(Color::Yellow);
+            }
+
+            // current: underline
+            if self.current_index == index {
+                card_style = card_style.add_modifier(tui::style::Modifier::UNDERLINED);
+            }
+
+            spans.push(Span::styled(card_str, card_style));
+
+            spans.push(Span::raw(" "));
+        }
+        Spans::from(spans)
     }
 }
