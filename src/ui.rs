@@ -1,5 +1,6 @@
 use std::{cell::RefCell, collections::HashSet, rc::Rc};
 
+use crossterm::event::KeyCode;
 use tui::{
     backend::CrosstermBackend,
     layout::{Alignment, Constraint, Layout, Rect},
@@ -13,21 +14,27 @@ use crate::{
     card::Card,
     game::GameState,
     player::{Client, Player},
+    ui,
 };
 use std::io;
 
-pub enum UIstate {}
+pub enum UIEvent {
+    None,
+    PlayCards(Vec<Card>), // 出牌
+    Skip,                 // 跳过
+                          // TODO: send message
+}
 
 pub const TICK_RATE: u64 = 250;
 
 pub type TerminalType = Terminal<CrosstermBackend<io::Stdout>>;
 pub struct GameUI {
-    client: Rc<RefCell<Client>>,         // 显示手牌
-    select_index: HashSet<usize>,        // 已选择要出的牌
-    current_index: usize,                // 选择的位置
-    players: Rc<RefCell<Vec<Player>>>,   // 显示其他玩家
-    terminal: Rc<RefCell<TerminalType>>, // 绘制 ui
-    game_state: Rc<RefCell<GameState>>,  // 还需要一个用于绘制场上分数、当前出牌、当前出牌玩家的 ui
+    select_index: HashSet<usize>,            // 已选择要出的牌
+    current_index: usize,                    // 选择的位置
+    client: Rc<RefCell<Client>>,             // 显示手牌
+    players: Rc<RefCell<Vec<Player>>>,       // 显示其他玩家
+    game_state: Rc<RefCell<GameState>>, // 还需要一个用于绘制场上分数、当前出牌、当前出牌玩家的 ui
+    pub terminal: Rc<RefCell<TerminalType>>, // 绘制 ui
 }
 
 impl GameUI {
@@ -158,5 +165,55 @@ impl GameUI {
             spans.push(Span::raw(" "));
         }
         Spans::from(spans)
+    }
+
+    /// 处理用户输入
+    /// 如果是需要连接服务端，则返回一个 UIEvent
+    /// 其他情况在 ui 内部处理
+    pub fn handle_input(&mut self, keycode: KeyCode) -> UIEvent {
+        use KeyCode::*;
+        match keycode {
+            Left => {
+                let len = self.client.borrow().cards.len();
+                if len == 0 {
+                    return UIEvent::None;
+                }
+                self.current_index = (self.current_index + len - 1) % len;
+                UIEvent::None
+            }
+            Right => {
+                let len = self.client.borrow().cards.len();
+                if len == 0 {
+                    return UIEvent::None;
+                }
+                self.current_index = (self.current_index + 1) % len;
+                UIEvent::None
+            }
+            // space
+            Char(' ') => {
+                // 反选
+                if self.select_index.contains(&self.current_index) {
+                    self.select_index.remove(&self.current_index);
+                } else {
+                    self.select_index.insert(self.current_index);
+                }
+                UIEvent::None
+            }
+            Enter => {
+                // 出牌
+                if !self.select_index.is_empty() {
+                    let mut cards = vec![];
+                    for index in &self.select_index {
+                        cards.push(self.client.borrow().cards[*index].clone());
+                    }
+                    self.select_index.clear();
+                    self.current_index = 0;
+                    return UIEvent::PlayCards(cards);
+                }
+                UIEvent::None
+            }
+
+            _ => UIEvent::None,
+        }
     }
 }

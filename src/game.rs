@@ -8,9 +8,10 @@ use crate::player::{Client, Player};
 use crate::proto::{
     self, stream_response, Continue, End, Fail, PlayCards, StreamRequest, StreamResponse,
 };
-use crate::ui::{self, GameUI};
+use crate::ui::{self, GameUI, UIEvent};
 use crossterm;
 use crossterm::event::{poll, Event};
+use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 use tokio::sync::mpsc::{Receiver, Sender};
 
 #[derive(Debug)]
@@ -65,6 +66,7 @@ impl Game {
             self.players.clone(),
             self.game_state.clone(),
         );
+        enable_raw_mode().unwrap(); // important
         loop {
             // render the game ui
             ui.main_screen();
@@ -75,17 +77,30 @@ impl Game {
                     use crossterm::event::KeyCode::*;
                     match key_event.code {
                         Esc => break,
-                        Left => {}
-                        Right => {}
-                        _ => (),
-                    }
+                        _ => match ui.handle_input(key_event.code) {
+                            UIEvent::PlayCards(cards) => {
+                                self.play_cards(cards).await;
+                            }
+                            UIEvent::Skip => {
+                                self.pass().await;
+                            }
+                            _ => {}
+                        },
+                    };
                 }
             }
             // handle event
-
             // check reponse receiver
             self.check_response();
         }
+        // exit
+        self.exit(&mut ui);
+    }
+
+    fn exit(&self, ui: &mut GameUI) {
+        disable_raw_mode().unwrap();
+        ui.terminal.borrow_mut().clear().unwrap();
+        ui.terminal.borrow_mut().show_cursor().unwrap();
     }
 
     // TODO: add error handler
