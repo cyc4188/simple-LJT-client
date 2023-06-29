@@ -12,9 +12,8 @@ use tui::{
 
 use crate::{
     card::Card,
-    game::GameState,
+    game::GameStatus,
     player::{Client, Player},
-    ui,
 };
 use std::io;
 
@@ -32,17 +31,12 @@ pub struct GameUI {
     select_index: HashSet<usize>,            // 已选择要出的牌
     current_index: usize,                    // 选择的位置
     client: Rc<RefCell<Client>>,             // 显示手牌
-    players: Rc<RefCell<Vec<Player>>>,       // 显示其他玩家
-    game_state: Rc<RefCell<GameState>>, // 还需要一个用于绘制场上分数、当前出牌、当前出牌玩家的 ui
+    game_state: Rc<RefCell<GameStatus>>, // 还需要一个用于绘制场上分数、当前出牌、当前出牌玩家的 ui
     pub terminal: Rc<RefCell<TerminalType>>, // 绘制 ui
 }
 
 impl GameUI {
-    pub fn new(
-        client: Rc<RefCell<Client>>,
-        players: Rc<RefCell<Vec<Player>>>,
-        game_state: Rc<RefCell<GameState>>,
-    ) -> Self {
+    pub fn new(client: Rc<RefCell<Client>>, game_state: Rc<RefCell<GameStatus>>) -> Self {
         let stdout = io::stdout;
         let backend = CrosstermBackend::new(stdout());
         let mut terminal = Terminal::new(backend).unwrap();
@@ -51,7 +45,6 @@ impl GameUI {
         Self {
             client,
             terminal: Rc::new(RefCell::new(terminal)),
-            players,
             game_state,
             select_index: HashSet::new(),
             current_index: 0,
