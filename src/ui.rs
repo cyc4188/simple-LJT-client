@@ -124,7 +124,7 @@ impl GameUI {
             .split(location);
 
         // chunks[0] is for other players
-        // TODO
+        self.draw_game_state(f, location);
         // chunks[1] is for cards
         self.draw_cards(f, chunks[1]);
     }
@@ -133,6 +133,11 @@ impl GameUI {
         let block = Block::default().title("Chat").borders(Borders::ALL);
         f.render_widget(block, location);
         // TODO: add logic
+    }
+
+    fn draw_game_state(&self, f: &mut Frame<CrosstermBackend<io::Stdout>>, location: Rect) {
+        let block = Block::default().title("Game State").borders(Borders::ALL);
+        f.render_widget(block, location);
     }
 
     fn draw_cards(&self, f: &mut Frame<CrosstermBackend<io::Stdout>>, location: Rect) {

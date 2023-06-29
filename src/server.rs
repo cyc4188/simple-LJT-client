@@ -68,12 +68,13 @@ impl Server {
 
         let response = self.game_client.stream(outbound).await.unwrap();
         let mut inbound = response.into_inner();
-        while let Some(resp) = inbound.message().await.unwrap() {
+        while let Some(resp) = inbound.message().await.unwrap_or(None) {
             // println!("resp = {:?}", resp);
             self.response_sender
                 .send(resp)
                 .await
                 .expect("cannot send response to game");
         }
+        println!("server disconnect");
     }
 }
