@@ -7,7 +7,7 @@ use std::time::Duration;
 use crate::card::Card;
 use crate::player::{Client, Player};
 use crate::proto::{self, stream_response, PlayCards, StreamRequest, StreamResponse};
-use crate::ui::{self, GameUI, UIEvent};
+use crate::ui::gameui::{self, GameUI, TerminalType, UIEvent};
 use crossterm;
 use crossterm::event::{poll, Event};
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
@@ -63,11 +63,10 @@ pub struct Game {
 
 impl Game {
     pub fn new(
-        id: String,
+        client: Rc<RefCell<Client>>,
         request_sender: Sender<StreamRequest>,
         response_receiver: Receiver<StreamResponse>,
     ) -> Self {
-        let client = Rc::new(RefCell::new(Client::new(id)));
         let game_state = Rc::new(RefCell::new(GameStatus::new()));
 
         Self {
@@ -78,16 +77,16 @@ impl Game {
         }
     }
 
-    pub async fn game_loop(&mut self) {
+    pub async fn game_loop(&mut self, terminal: Rc<RefCell<TerminalType>>) {
         // self.init().await.unwrap();
-        let mut ui = GameUI::new(self.client.clone(), self.game_state.clone());
+        let mut ui = GameUI::new(self.client.clone(), self.game_state.clone(), terminal);
         enable_raw_mode().unwrap(); // important
         loop {
             // render the game ui
             ui.main_screen();
 
             // listen for event
-            if poll(Duration::from_millis(ui::TICK_RATE)).unwrap() {
+            if poll(Duration::from_millis(gameui::TICK_RATE)).unwrap() {
                 if let Event::Key(key_event) = crossterm::event::read().unwrap() {
                     use crossterm::event::KeyCode::*;
                     match key_event.code {
@@ -150,6 +149,7 @@ impl Game {
                 stream_response::Response::Continue(cont) => {
                     // change client cards
                     let mut client = self.client.borrow_mut();
+                    println!("{}", cont.cards.len());
                     client.modify_cards(cont.cards.iter().map(Card::from).collect());
 
                     // change game state

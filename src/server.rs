@@ -11,10 +11,16 @@ pub struct Server {
     pub response_sender: Sender<StreamResponse>,
     pub game_client: GameClient<Channel>,
     pub id: String,
+    pub name: String,
 }
 
 impl Server {
-    pub async fn new(response_sender: Sender<StreamResponse>, id: String, dest: String) -> Self {
+    pub async fn new(
+        response_sender: Sender<StreamResponse>,
+        name: String,
+        id: String,
+        dest: String,
+    ) -> Self {
         let mut game_client = GameClient::connect(dest)
             .await
             .expect("cannot connect to the server");
@@ -22,7 +28,7 @@ impl Server {
         // 首先发送一个 ConnectRequest
         let connect_request = Request::new(ConnectRequest {
             id: id.clone(),
-            name: "test".into(),
+            name: name.clone(),
         });
         let response = game_client
             .connecting(connect_request)
@@ -34,11 +40,13 @@ impl Server {
             response_sender,
             id,
             game_client,
+            name,
         }
     }
 
     pub async fn start_server(mut self, mut rx: Receiver<StreamRequest>) {
         let id = self.id.clone();
+        let name = self.name.clone();
         let outbound = async_stream::stream! {
             for i in 0..1 {
                 let request = StreamRequest {
@@ -48,7 +56,7 @@ impl Server {
                                 proto::PlayCards {
                                     player: Some(proto::Player {
                                         id: id.clone(),
-                                        name: "test".into(),
+                                        name: name.clone(),
                                         score: 0,
                                         card_num: 0,
                                         index: 0,

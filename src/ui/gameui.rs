@@ -36,15 +36,19 @@ pub struct GameUI {
 }
 
 impl GameUI {
-    pub fn new(client: Rc<RefCell<Client>>, game_state: Rc<RefCell<GameStatus>>) -> Self {
+    pub fn new(
+        client: Rc<RefCell<Client>>,
+        game_state: Rc<RefCell<GameStatus>>,
+        terminal: Rc<RefCell<TerminalType>>,
+    ) -> Self {
         let stdout = io::stdout;
-        let backend = CrosstermBackend::new(stdout());
-        let mut terminal = Terminal::new(backend).unwrap();
+        // let backend = CrosstermBackend::new(stdout());
+        // let mut terminal = Terminal::new(backend).unwrap();
 
-        terminal.clear().unwrap();
+        terminal.borrow_mut().clear().unwrap();
         Self {
             client,
-            terminal: Rc::new(RefCell::new(terminal)),
+            terminal,
             game_state,
             select_index: HashSet::new(),
             current_index: 0,
@@ -117,7 +121,7 @@ impl GameUI {
             .split(location);
 
         // chunks[0] is for other players
-        self.draw_game_state(f, location);
+        self.draw_game_state(f, chunks[0]);
         // chunks[1] is for cards
         self.draw_cards(f, chunks[1]);
     }
@@ -135,6 +139,7 @@ impl GameUI {
 
     fn draw_cards(&self, f: &mut Frame<CrosstermBackend<io::Stdout>>, location: Rect) {
         let cards = &self.client.borrow().cards;
+        // println!("{}", cards.len());
         let card_widget = self.card_widget(cards);
         let cards = Paragraph::new(card_widget)
             .block(Block::default().title("Cards").borders(Borders::ALL))

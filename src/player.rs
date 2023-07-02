@@ -2,18 +2,20 @@ use crate::card::Card;
 use crate::proto;
 
 pub struct Client {
-    pub id: String,       // 玩家id
+    pub id: String, // 玩家id
+    pub name: String,
     pub cards: Vec<Card>, // 手牌
     pub player: Player,   // 玩家信息
 }
 
 impl Client {
-    pub fn new(id: String) -> Self {
+    pub fn new(id: String, name: String) -> Self {
         Self {
             id: id.clone(),
+            name: name.clone(),
             cards: vec![],
             player: Player {
-                name: "test".into(),
+                name,
                 score: 0,
                 card_num: 0,
                 index: 0,
