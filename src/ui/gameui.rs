@@ -1,12 +1,13 @@
-use std::{cell::RefCell, collections::HashSet, rc::Rc};
+use std::{cell::RefCell, collections::HashSet, os::linux::raw::stat, rc::Rc};
 
 use crossterm::event::KeyCode;
+use tokio_tungstenite::tungstenite::http::uri::PathAndQuery;
 use tui::{
     backend::CrosstermBackend,
     layout::{Alignment, Constraint, Layout, Rect},
     style::{Color, Style},
     text::{Span, Spans},
-    widgets::{Block, Borders, Paragraph, Tabs},
+    widgets::{Block, Borders, List, ListItem, ListState, Paragraph, Tabs},
     Frame,
 };
 
@@ -38,10 +39,6 @@ impl GameUI {
         game_state: Rc<RefCell<GameStatus>>,
         terminal: Rc<RefCell<TerminalType>>,
     ) -> Self {
-        let stdout = io::stdout;
-        // let backend = CrosstermBackend::new(stdout());
-        // let mut terminal = Terminal::new(backend).unwrap();
-
         terminal.borrow_mut().clear().unwrap();
         Self {
             client,
@@ -132,6 +129,31 @@ impl GameUI {
     fn draw_game_state(&self, f: &mut Frame<CrosstermBackend<io::Stdout>>, location: Rect) {
         let block = Block::default().title("Game State").borders(Borders::ALL);
         f.render_widget(block, location);
+
+        let chunks = Layout::default()
+            .direction(tui::layout::Direction::Horizontal)
+            .constraints([Constraint::Percentage(30), Constraint::Percentage(70)])
+            .margin(1)
+            .split(location);
+
+        // draw player
+        let mut state = ListState::default();
+        state.select(Some(self.game_state.borrow().current_index as usize));
+        f.render_stateful_widget(self.player_widget(), chunks[0], &mut state);
+
+        // draw current cards
+        let current_cards = Spans::from(
+            self.game_state
+                .borrow()
+                .current_cards
+                .iter()
+                .map(|card| Span::raw(card.to_string() + " "))
+                .collect::<Vec<_>>(),
+        );
+        let para = Paragraph::new(current_cards)
+            .block(Block::default().borders(Borders::ALL))
+            .alignment(Alignment::Center);
+        f.render_widget(para, chunks[1]);
     }
 
     fn draw_cards(&self, f: &mut Frame<CrosstermBackend<io::Stdout>>, location: Rect) {
@@ -142,6 +164,19 @@ impl GameUI {
             .block(Block::default().title("Cards").borders(Borders::ALL))
             .alignment(Alignment::Center);
         f.render_widget(cards, location);
+    }
+
+    fn player_widget(&self) -> List<'static> {
+        let mut items = vec![];
+        for (_index, player) in self.game_state.borrow().players.iter() {
+            let player_str = format!("{}({})", player.name, player.card_num);
+            let item = ListItem::new(player_str);
+            items.push(item);
+        }
+        return List::new(items)
+            .highlight_symbol(">>")
+            .style(Style::default().fg(Color::White))
+            .block(Block::default().borders(Borders::ALL));
     }
 
     fn card_widget(&self, cards: &[Card]) -> Spans<'static> {
@@ -206,6 +241,7 @@ impl GameUI {
                     for index in &self.select_index {
                         cards.push(self.client.borrow().cards[*index].clone());
                     }
+                    Card::sort_cards(&mut cards);
                     self.select_index.clear();
                     self.current_index = 0;
                     return UIEvent::PlayCards(cards);

@@ -20,7 +20,7 @@ pub struct GameStatus {
     pub current_cards: Vec<Card>,
     pub current_index: u32,
     pub players: HashMap<u32, Player>,
-    pub last_played: HashMap<u32, Vec<Card>>,
+    pub last_played: HashMap<u32, Vec<Card>>, // 对应玩家上一次出的有效牌
 }
 
 impl GameStatus {
