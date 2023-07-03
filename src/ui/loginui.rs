@@ -9,7 +9,7 @@ use tui::{
     widgets::{Block, Borders, Clear, Paragraph},
 };
 
-use super::gameui::TerminalType;
+use super::{gameui::TerminalType, util::centered_rect};
 
 pub struct LoginUI {
     pub terminal: Rc<RefCell<TerminalType>>, // 绘制 ui
@@ -37,7 +37,7 @@ impl LoginUI {
             terminal
                 .borrow_mut()
                 .draw(|f| {
-                    let size = f.size();
+                    let size = centered_rect(40, 50, f.size());
                     f.render_widget(Clear, size);
 
                     let layout = Layout::default()

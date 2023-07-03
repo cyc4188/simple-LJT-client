@@ -149,7 +149,6 @@ impl Game {
                 stream_response::Response::Continue(cont) => {
                     // change client cards
                     let mut client = self.client.borrow_mut();
-                    println!("{}", cont.cards.len());
                     client.modify_cards(cont.cards.iter().map(Card::from).collect());
 
                     // change game state
@@ -158,7 +157,8 @@ impl Game {
                 }
                 stream_response::Response::Fail(fail) => {
                     // TODO: pop fail message
-                    println!("fail message: {}", &fail.reason);
+                    // TODO: log
+                    // println!("fail message: {}", &fail.reason);
                 }
                 stream_response::Response::End(_) => {
                     // TODO: end the game
