@@ -1,4 +1,12 @@
-use tui::layout::{Constraint, Direction, Layout, Rect};
+use std::io;
+
+use tui::{
+    backend::CrosstermBackend,
+    layout::{Constraint, Direction, Layout, Rect},
+    Terminal,
+};
+
+pub type TerminalType = Terminal<CrosstermBackend<io::Stdout>>;
 
 pub fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
     let popup_layout = Layout::default()

@@ -9,21 +9,20 @@ use tui::{
     widgets::{Block, Borders, Clear, Paragraph},
 };
 
-use super::util::centered_rect;
-use super::util::TerminalType;
+use super::util::{centered_rect, TerminalType};
 
-pub struct LoginUI {
+pub struct RoomUI {
     pub terminal: Rc<RefCell<TerminalType>>, // 绘制 ui
-    pub name: String,
+    pub roomid: String,
 }
 
 const TICKS: u64 = 250;
 
-impl LoginUI {
+impl RoomUI {
     pub fn new(terminal: Rc<RefCell<TerminalType>>) -> Self {
         Self {
             terminal,
-            name: String::new(),
+            roomid: String::new(),
         }
     }
 
@@ -53,11 +52,11 @@ impl LoginUI {
                             .as_ref(),
                         )
                         .split(size);
-                    let input = Paragraph::new(&self.name[..])
+                    let input = Paragraph::new(&self.roomid[..])
                         .alignment(Alignment::Center)
-                        .block(Block::default().borders(Borders::ALL).title("Name"));
+                        .block(Block::default().borders(Borders::ALL).title("RoomId"));
 
-                    let text = Paragraph::new("Enter name").alignment(Alignment::Left);
+                    let text = Paragraph::new("Enter RoomId").alignment(Alignment::Left);
                     let instruction = Paragraph::new("Press Enter to confirm")
                         .alignment(Alignment::Left)
                         .block(Block::default().borders(Borders::ALL));
@@ -74,8 +73,8 @@ impl LoginUI {
 
                     match event.code {
                         Char(c) => {
-                            if self.name.len() <= 20 {
-                                self.name.push(c);
+                            if self.roomid.len() <= 20 {
+                                self.roomid.push(c);
                             }
                         }
                         Esc => {
@@ -84,7 +83,7 @@ impl LoginUI {
                             return None;
                         }
                         Backspace => {
-                            self.name.pop();
+                            self.roomid.pop();
                         }
                         Enter => {
                             run = false;
@@ -95,6 +94,6 @@ impl LoginUI {
             }
         }
         disable_raw_mode().unwrap();
-        Some(self.name.clone())
+        Some(self.roomid.clone())
     }
 }

@@ -8,7 +8,7 @@ use simple_ljt_client::proto::{
     self, game_client::GameClient, stream_request, ConnectRequest, StreamRequest, StreamResponse,
 };
 use simple_ljt_client::server::Server;
-use simple_ljt_client::ui::loginui;
+use simple_ljt_client::ui::{loginui, roomui};
 use tui::backend::CrosstermBackend;
 use tui::Terminal;
 
@@ -46,11 +46,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     .await;
     tokio::task::spawn(server.start_server(request_receiver));
 
-    // start game loop
     let mut game = Game::new(client.clone(), request_sender, response_receiver);
-    game.game_loop(terminal_rc).await;
 
-    // handle.await.unwrap();
+    let roomId = if let Some(inner) = roomui::RoomUI::new(terminal_rc.clone()).screen() {
+        inner
+    } else {
+        return Ok(());
+    };
+    // start game loop
+    game.game_loop(terminal_rc.clone()).await;
 
     return Ok(());
 }

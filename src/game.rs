@@ -7,7 +7,8 @@ use std::time::Duration;
 use crate::card::Card;
 use crate::player::{Client, Player};
 use crate::proto::{self, stream_response, PlayCards, StreamRequest, StreamResponse};
-use crate::ui::gameui::{self, GameUI, TerminalType, UIEvent};
+use crate::ui::gameui::{self, GameUI, UIEvent};
+use crate::ui::util::TerminalType;
 use crossterm;
 use crossterm::event::{poll, Event};
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
@@ -157,7 +158,6 @@ impl Game {
                 }
                 stream_response::Response::Fail(fail) => {
                     // TODO: pop fail message
-                    // TODO: log
                     // println!("fail message: {}", &fail.reason);
                 }
                 stream_response::Response::End(_) => {

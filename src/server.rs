@@ -34,7 +34,7 @@ impl Server {
             .connecting(connect_request)
             .await
             .expect("cannot connect to the server");
-        println!("RESPONSE={:?}", response);
+        // println!("RESPONSE={:?}", response);
 
         Self {
             response_sender,

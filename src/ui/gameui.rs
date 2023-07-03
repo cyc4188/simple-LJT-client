@@ -7,15 +7,13 @@ use tui::{
     style::{Color, Style},
     text::{Span, Spans},
     widgets::{Block, Borders, Paragraph, Tabs},
-    Frame, Terminal,
+    Frame,
 };
 
-use crate::{
-    card::Card,
-    game::GameStatus,
-    player::{Client, Player},
-};
+use crate::{card::Card, game::GameStatus, player::Client};
 use std::io;
+
+use super::util::TerminalType;
 
 pub enum UIEvent {
     None,
@@ -26,7 +24,6 @@ pub enum UIEvent {
 
 pub const TICK_RATE: u64 = 250;
 
-pub type TerminalType = Terminal<CrosstermBackend<io::Stdout>>;
 pub struct GameUI {
     select_index: HashSet<usize>,            // 已选择要出的牌
     current_index: usize,                    // 选择的位置
